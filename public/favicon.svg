@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .bg { fill: #0E0E0E } .c { fill: #F4F3EF } .a { fill: #7B42BC }
+    @media (prefers-color-scheme: dark) { .bg { fill: #F4F3EF } .c { fill: #0E0E0E } }
+  </style>
+  <rect class="bg" width="32" height="32" rx="7" />
+  <!-- three "resources": two ink cubes and one being provisioned -->
+  <rect class="c" x="7" y="7" width="8" height="8" />
+  <rect class="c" x="17" y="17" width="8" height="8" />
+  <rect class="a" x="17" y="7" width="8" height="8" />
+</svg>
