@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/jetbrains-mono'
 import './styles/tokens.css'
 import './styles/global.css'
+import './styles/components.css'
 import { App } from './App'
 
 // The hosted preview can't load Fontshare, so it bundles Geist as the display face.
