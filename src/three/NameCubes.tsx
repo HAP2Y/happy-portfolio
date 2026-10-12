@@ -13,6 +13,71 @@ const TUNE = {
   cubesDesktop: 5200, // total cubes in the name on desktop
   cubesLowPower: 1700, // phones and low-power devices
   cubeFill: 0.8, // cube size as a fraction of grid spacing (gaps between cubes)
+  assembleSpread: 0.75, // seconds: left → right stagger of the fly-in
+  assembleJitter: 0.45, // seconds of random extra delay per cube
+  assembleDuration: 0.85, // seconds each cube spends in flight (+ up to 0.45 random)
+}
+
+interface Sim {
+  total: number
+  start: Float32Array
+  axis: Float32Array
+  rot: Float32Array
+  delay: Float32Array
+  dur: Float32Array
+  arc: Float32Array
+  seed: Float32Array
+  rest: Uint8Array
+  end: number
+  applyAt: number | null
+  assembled: boolean
+  firstFrame: boolean
+}
+
+function rand(seed: number) {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
+function createSim(layout: NameLayout): Sim {
+  const total = layout.count + layout.smileCount
+  const start = new Float32Array(total * 3)
+  const axis = new Float32Array(total * 3)
+  const rot = new Float32Array(total)
+  const delay = new Float32Array(total)
+  const dur = new Float32Array(total)
+  const arc = new Float32Array(total)
+  const seed = new Float32Array(total)
+  let end = 0
+  for (let i = 0; i < total; i++) {
+    const r1 = rand(i + 1), r2 = rand(i + 7.3), r3 = rand(i + 13.7), r4 = rand(i + 21.1)
+    // scattered start: a wide shell around the name, biased to come from behind
+    const theta = r1 * Math.PI * 2
+    const phi = Math.acos(2 * r2 - 1)
+    const dist = 5 + r3 * 13
+    const i3 = i * 3
+    start[i3] = layout.targets[i3] + Math.sin(phi) * Math.cos(theta) * dist * 1.4
+    start[i3 + 1] = layout.targets[i3 + 1] + Math.cos(phi) * dist * 0.7
+    start[i3 + 2] = layout.targets[i3 + 2] - 3 - r4 * 16
+    // random rotation axis
+    const ax = rand(i + 3.1) - 0.5, ay = rand(i + 5.9) - 0.5, az = rand(i + 9.4) - 0.5
+    const len = Math.hypot(ax, ay, az) || 1
+    axis[i3] = ax / len
+    axis[i3 + 1] = ay / len
+    axis[i3 + 2] = az / len
+    rot[i] = 2 + r1 * 4
+    delay[i] = layout.nx[i] * TUNE.assembleSpread + r3 * TUNE.assembleJitter
+    dur[i] = TUNE.assembleDuration + r4 * 0.45
+    arc[i] = (r2 - 0.3) * 2.2
+    seed[i] = r1
+    end = Math.max(end, delay[i] + dur[i])
+  }
+  return {
+    total, start, axis, rot, delay, dur, arc, seed, end,
+    rest: new Uint8Array(total),
+    applyAt: null, assembled: false,
+    firstFrame: true,
+  }
 }
 
 /** Writes a column-major 4×4 (axis-angle rotation, uniform scale, translation). */
@@ -34,19 +99,23 @@ function writeMatrix(m: Float32Array, o: number, px: number, py: number, pz: num
   m[o + 12] = px; m[o + 13] = py; m[o + 14] = pz; m[o + 15] = 1
 }
 
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v)
+
 interface Props {
+  apply: boolean
+  reduced: boolean
   lowPower: boolean
   onReady: () => void
+  onAssembled: () => void
 }
 
-export function NameCubes({ lowPower, onReady }: Props) {
+export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Props) {
   const { camera, size, invalidate } = useThree()
   const theme = useTheme()
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const [layout, setLayout] = useState<NameLayout | null>(null)
   const twoLines = size.width / size.height < 1.1
-  const dirty = useRef(true)
 
   // Build (or rebuild on orientation change) the letter layout.
   useEffect(() => {
@@ -67,38 +136,57 @@ export function NameCubes({ lowPower, onReady }: Props) {
     }
   }, [twoLines, lowPower])
 
-  const total = layout ? layout.count + layout.smileCount : 0
-  const colorBuffer = useMemo(() => new Float32Array(Math.max(1, total) * 3), [total])
+  const sim = useMemo(() => (layout ? createSim(layout) : null), [layout])
+  const colorBuffer = useMemo(() => new Float32Array((sim?.total ?? 1) * 3), [sim])
   const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
   const material = useMemo(() => new THREE.MeshLambertMaterial({ color: '#ffffff' }), [])
   useEffect(() => () => { geometry.dispose(); material.dispose() }, [geometry, material])
 
-  // Theme colour (linear space) read from the CSS token.
-  const ink = useMemo(() => {
-    void theme // recompute when the theme flips
-    return new THREE.Color(cssVar('--ink') || '#0e0e0e')
+  // Theme colours (linear space) read from CSS tokens.
+  const colors = useMemo(() => {
+    const bg = new THREE.Color(cssVar('--bg') || '#f4f3ef')
+    const ink = new THREE.Color(cssVar('--ink') || '#0e0e0e')
+    const accent = new THREE.Color(cssVar('--accent') || '#7b42bc')
+    const faint = bg.clone().lerp(ink, 0.28)
+    return { ink, accent, faint, theme }
   }, [theme])
 
-  // Cubes exist: tell the hero.
+  // Signal readiness once cubes exist.
   useEffect(() => {
-    if (!layout) return
-    dirty.current = true
+    if (!sim) return
+    if (reduced) {
+      sim.applyAt = -999
+      sim.assembled = true
+    }
+    sim.firstFrame = true
+    for (let i = 0; i < sim.total; i++) sim.rest[i] = 0
     onReady()
     invalidate()
-  }, [layout, onReady, invalidate])
+  }, [sim, reduced, onReady, invalidate])
 
-  // Repaint when the theme changes.
+  // Repaint when theme changes (all cubes need new colours).
   useEffect(() => {
-    dirty.current = true
+    if (!sim) return
+    sim.firstFrame = true
+    for (let i = 0; i < sim.total; i++) sim.rest[i] = 0
     invalidate()
-  }, [ink, invalidate])
+  }, [colors, sim, invalidate])
 
-  useFrame(() => {
+  useFrame((state) => {
     const mesh = meshRef.current
     const group = groupRef.current
-    if (!mesh || !group || !layout || !mesh.instanceColor) return
+    if (!mesh || !group || !sim || !layout || !mesh.instanceColor) return
+    const t = state.clock.elapsedTime
 
-    // Fit the name to the viewport.
+    // Start the fly-in when the terminal says so.
+    if (apply && sim.applyAt === null) sim.applyAt = t
+    const phaseT = sim.applyAt === null ? -1 : t - sim.applyAt
+    if (!sim.assembled && sim.applyAt !== null && phaseT > sim.end) {
+      sim.assembled = true
+      onAssembled()
+    }
+
+    // Fit the name to the viewport (independent of the scroll dolly).
     const cam = camera as THREE.PerspectiveCamera
     const visH = 2 * Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) * BASE_CAMERA_Z
     const visW = visH * cam.aspect
@@ -109,29 +197,74 @@ export function NameCubes({ lowPower, onReady }: Props) {
     group.scale.setScalar(scale)
     group.position.y = visH * (twoLines ? 0.07 : 0.035)
 
-    // Write every cube once (and again after a theme change).
-    if (!dirty.current) return
-    dirty.current = false
     const m = mesh.instanceMatrix.array as Float32Array
-    const col = mesh.instanceColor.array as Float32Array
+    const col = mesh.instanceColor!.array as Float32Array
     const T = layout.targets
+    const { start: S, axis: A } = sim
     const cs = layout.cell * TUNE.cubeFill
-    for (let i = 0; i < total; i++) {
+    const { ink, accent, faint } = colors
+    let changed = sim.firstFrame
+
+    for (let i = 0; i < sim.total; i++) {
       const i3 = i * 3
-      writeMatrix(m, i * 16, T[i3], T[i3 + 1], T[i3 + 2], 0, 0, 1, 0, cs)
-      col[i3] = ink.r; col[i3 + 1] = ink.g; col[i3 + 2] = ink.b
+      const tx = T[i3], ty = T[i3 + 1], tz = T[i3 + 2]
+      let px: number, py: number, pz: number, angle: number, s: number
+      let cr: number, cg: number, cb: number
+
+      if (!sim.assembled && phaseT < sim.delay[i]) {
+        // scattered, waiting to be provisioned
+        if (reduced) continue
+        const sd = sim.seed[i] * 6.283
+        px = S[i3] + Math.sin(t * 0.35 + sd) * 0.25
+        py = S[i3 + 1] + Math.cos(t * 0.3 + sd) * 0.25
+        pz = S[i3 + 2]
+        angle = sd + t * 0.4
+        s = cs * 0.5
+        cr = faint.r; cg = faint.g; cb = faint.b
+        changed = true
+      } else if (!sim.assembled && phaseT < sim.delay[i] + sim.dur[i]) {
+        // in flight
+        const p = clamp01((phaseT - sim.delay[i]) / sim.dur[i])
+        const e = 1 - Math.pow(1 - p, 4)
+        px = S[i3] + (tx - S[i3]) * e
+        py = S[i3 + 1] + (ty - S[i3 + 1]) * e + Math.sin(p * Math.PI) * sim.arc[i] * (1 - e)
+        pz = S[i3 + 2] + (tz - S[i3 + 2]) * e
+        angle = (1 - e) * sim.rot[i]
+        s = cs * (0.5 + 0.5 * e)
+        const c = clamp01((p - 0.7) / 0.3)
+        cr = accent.r + (ink.r - accent.r) * c
+        cg = accent.g + (ink.g - accent.g) * c
+        cb = accent.b + (ink.b - accent.b) * c
+        changed = true
+      } else {
+        // provisioned: sits on its letter
+        if (sim.rest[i] && !sim.firstFrame) continue
+        sim.rest[i] = 1
+        px = tx; py = ty; pz = tz
+        angle = 0
+        s = cs
+        cr = ink.r; cg = ink.g; cb = ink.b
+        changed = true
+      }
+
+      writeMatrix(m, i * 16, px, py, pz, A[i3], A[i3 + 1], A[i3 + 2], angle, s)
+      col[i3] = cr; col[i3 + 1] = cg; col[i3 + 2] = cb
     }
-    mesh.instanceMatrix.needsUpdate = true
-    mesh.instanceColor.needsUpdate = true
+
+    sim.firstFrame = false
+    if (changed) {
+      mesh.instanceMatrix.needsUpdate = true
+      mesh.instanceColor!.needsUpdate = true
+    }
   })
 
-  if (!layout) return null
+  if (!layout || !sim) return null
   return (
     <group ref={groupRef}>
       <instancedMesh
-        key={`${layout.lines}-${total}`}
+        key={`${layout.lines}-${sim.total}`}
         ref={meshRef}
-        args={[geometry, material, total]}
+        args={[geometry, material, sim.total]}
         frustumCulled={false}
       >
         <instancedBufferAttribute attach="instanceColor" args={[colorBuffer, 3]} usage={THREE.DynamicDrawUsage} />

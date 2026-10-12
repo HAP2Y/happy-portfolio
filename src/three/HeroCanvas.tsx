@@ -4,12 +4,14 @@ import { NameCubes } from './NameCubes'
 import { BASE_CAMERA_Z, CAMERA_FOV } from './shared'
 
 export interface HeroCanvasProps {
+  apply: boolean
   reduced: boolean
   lowPower: boolean
   onReady: () => void
+  onAssembled: () => void
 }
 
-export default function HeroCanvas({ reduced, lowPower, onReady }: HeroCanvasProps) {
+export default function HeroCanvas({ apply, reduced, lowPower, onReady, onAssembled }: HeroCanvasProps) {
   const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2)
 
   return (
@@ -31,7 +33,7 @@ export default function HeroCanvas({ reduced, lowPower, onReady }: HeroCanvasPro
         <ambientLight intensity={1.6} />
         <directionalLight position={[4, 6, 8]} intensity={2.2} />
         <directionalLight position={[-6, -2, 4]} intensity={0.6} />
-        <NameCubes lowPower={lowPower} onReady={onReady} />
+        <NameCubes apply={apply} reduced={reduced} lowPower={lowPower} onReady={onReady} onAssembled={onAssembled} />
       </Canvas>
     </div>
   )

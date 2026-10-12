@@ -46,14 +46,15 @@ export function Hero() {
   }, [webgl, typed, reduced])
 
   const onReady = useCallback(() => setSceneReady(true), [])
+  const onAssembled = useCallback(() => setAssembled(true), [])
   const onTyped = useCallback(() => setTyped(true), [])
   const onSceneError = useCallback(() => setWebgl(false), [])
 
   const apply = typed && sceneReady
-  // For now the cubes simply appear in place once the command has typed.
+  // A reduced-motion scene is assembled the moment it exists.
   useEffect(() => {
-    if (apply) setAssembled(true)
-  }, [apply])
+    if (reduced && sceneReady) setAssembled(true)
+  }, [reduced, sceneReady])
 
   return (
     <section id="top" className={styles.hero} data-assembled={assembled || undefined}>
@@ -61,7 +62,13 @@ export function Hero() {
         {webgl && load3D && (
           <SceneBoundary onError={onSceneError}>
             <Suspense fallback={null}>
-              <HeroCanvas reduced={reduced} lowPower={lowPower} onReady={onReady} />
+              <HeroCanvas
+                apply={apply}
+                reduced={reduced}
+                lowPower={lowPower}
+                onReady={onReady}
+                onAssembled={onAssembled}
+              />
             </Suspense>
           </SceneBoundary>
         )}
