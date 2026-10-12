@@ -3,6 +3,7 @@ import { Header } from './components/Header'
 import { Cursor } from './components/Cursor'
 import { Wipe } from './components/Wipe'
 import { Toast, initMagnetic, initReveals } from './components/ui'
+import { Hero } from './sections/hero/Hero'
 import { useReducedMotion } from './lib/env'
 import { initSmoothScroll } from './lib/scroll'
 
@@ -32,10 +33,7 @@ export function App() {
       </a>
       <Header />
       <main id="main">
-        {/* placeholder until the real hero lands */}
-        <section id="top" className="section wrap" style={{ minHeight: '100svh' }}>
-          <h1 className="h2">Happy Patel</h1>
-        </section>
+        <Hero />
         {/* placeholder until the real section lands */}
         <section id="about" className="section wrap" style={{ minHeight: '100svh' }}>
           <p className="label">about</p>

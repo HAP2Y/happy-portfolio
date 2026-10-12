@@ -1,0 +1,181 @@
+.hero {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: calc(var(--header-h) + 20px) var(--gutter) clamp(20px, 4vh, 40px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.top {
+  grid-row: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.corner {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── terminal ─────────────────────────────────────────── */
+.terminal {
+  font-family: var(--font-mono);
+  font-size: clamp(0.72rem, 0.68rem + 0.2vw, 0.84rem);
+  line-height: 1.75;
+  max-width: min(62ch, 100%);
+  min-height: 7em;
+  min-width: 0;
+}
+.terminal p {
+  overflow-wrap: anywhere;
+}
+.cmd {
+  color: var(--ink);
+}
+.log {
+  color: var(--muted);
+}
+.done {
+  color: var(--accent);
+  font-weight: 600;
+}
+.caret {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.18em;
+  background: currentColor;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── bottom row ───────────────────────────────────────── */
+.bottom {
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: end;
+  column-gap: 16px;
+  row-gap: 20px;
+}
+
+.tagline {
+  grid-column: 1 / span 6;
+  font-size: var(--fs-lead);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  max-width: 21ch;
+  text-wrap: balance;
+}
+
+.region {
+  grid-column: 8 / span 3;
+  display: grid;
+  gap: 2px;
+}
+
+.scroll {
+  grid-column: 12;
+  justify-self: end;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: var(--ink);
+  padding: 6px;
+}
+.scrollLine {
+  position: relative;
+  width: 1px;
+  height: 44px;
+  background: var(--line);
+  overflow: hidden;
+}
+.scrollLine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 40%;
+  background: var(--ink);
+  animation: drip 1.8s var(--ease-in-out) infinite;
+}
+@keyframes drip {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(260%);
+  }
+}
+
+/* ── no-WebGL fallback name ───────────────────────────── */
+.fallbackName {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  column-gap: 0.25em;
+  padding-inline: var(--gutter);
+  font-size: var(--fs-huge);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+}
+.fallbackLine {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.3em);
+  transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
+}
+.fallbackLine:last-child {
+  transition-delay: 0.08s;
+}
+.hero[data-assembled] .fallbackLine {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 760px) {
+  .corner {
+    display: none;
+  }
+  .tagline {
+    grid-column: 1 / -1;
+  }
+  .region {
+    grid-column: 1 / span 9;
+  }
+  .scroll {
+    grid-column: 10 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret,
+  .scrollLine::after {
+    animation: none;
+  }
+}
