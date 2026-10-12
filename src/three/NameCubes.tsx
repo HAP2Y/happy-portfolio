@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { buildNameLayout, type NameLayout } from './textSampler'
 import { person } from '../content'
 import { cssVar } from '../lib/env'
+import { setCursorLabel } from '../lib/cursorStore'
 import { useTheme } from '../lib/theme'
 import { BASE_CAMERA_Z, pointer } from './shared'
 
@@ -22,6 +23,8 @@ const TUNE = {
   springDamping: 9, // lower = bouncier
   tiltY: 0.16, // radians of yaw at the screen edge
   tiltX: 0.09, // radians of pitch at the screen edge
+  bounceHeight: 0.28, // "Happy" hop height
+  bounceDuration: 0.5,
 }
 
 interface Sim {
@@ -39,6 +42,10 @@ interface Sim {
   end: number
   applyAt: number | null
   assembled: boolean
+  bounceAt: number
+  hoverUntil: number
+  smileP: number
+  hovering: boolean
   firstFrame: boolean
 }
 
@@ -86,7 +93,7 @@ function createSim(layout: NameLayout): Sim {
     vel: new Float32Array(total * 3),
     rest: new Uint8Array(total),
     applyAt: null, assembled: false,
-    firstFrame: true,
+    bounceAt: -10, hoverUntil: -10, smileP: 0, hovering: false, firstFrame: true,
   }
 }
 
@@ -136,7 +143,7 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
       twoLines,
       targetCubes: lowPower ? TUNE.cubesLowPower : TUNE.cubesDesktop,
       layers: lowPower ? 1 : 2,
-      smile: false,
+      smile: true,
       fontFamily: cssVar('--font-display') || 'sans-serif',
     }).then((l) => {
       if (!cancelled) setLayout(l)
@@ -245,6 +252,21 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
       }
     }
 
+    // Easter egg: hovering "Happy" bounces the letters and draws a smile.
+    const hb = layout.happy
+    const overHappy = hasHit && hx > hb.minX - 0.15 && hx < hb.maxX + 0.15 && hy > hb.minY - 0.35 && hy < hb.maxY + 0.15
+    if (overHappy) {
+      if (!sim.hovering && t - sim.bounceAt > 1.1) sim.bounceAt = t
+      sim.hovering = true
+      sim.hoverUntil = t + 0.5
+    } else if (sim.hovering && t > sim.hoverUntil) {
+      sim.hovering = false
+    }
+    if (!reduced) setCursorLabel(overHappy ? ':)' : null)
+    const smileTarget = sim.hovering ? 1 : 0
+    const smileStep = dt / 0.45
+    sim.smileP = smileTarget > sim.smileP ? Math.min(1, sim.smileP + smileStep) : Math.max(0, sim.smileP - smileStep)
+
     const m = mesh.instanceMatrix.array as Float32Array
     const col = mesh.instanceColor!.array as Float32Array
     const T = layout.targets
@@ -253,15 +275,29 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
     const R = TUNE.repelRadius, R2 = R * R
     const { springK: K, springDamping: C, repelForce: P } = TUNE
     const { ink, accent, faint } = colors
+    const happyLetters = person.firstName.length
+    const bounceT = t - sim.bounceAt
     let changed = sim.firstFrame
 
     for (let i = 0; i < sim.total; i++) {
       const i3 = i * 3
       const tx = T[i3], ty = T[i3 + 1], tz = T[i3 + 2]
+      const letter = layout.letter[i]
       let px: number, py: number, pz: number, angle: number, s: number
       let cr: number, cg: number, cb: number
 
-      if (!sim.assembled && phaseT < sim.delay[i]) {
+      if (letter === -1) {
+        // smile cube
+        const local = clamp01((sim.smileP - layout.nx[i] * 0.45) / 0.55)
+        if (local <= 0 && sim.rest[i]) continue
+        sim.rest[i] = local <= 0 ? 1 : 0
+        const e = local * local * (3 - 2 * local)
+        px = tx; py = ty - (1 - e) * 0.12; pz = tz
+        angle = (1 - e) * 1.2
+        s = e * cs * 0.9
+        cr = accent.r; cg = accent.g; cb = accent.b
+        changed = true
+      } else if (!sim.assembled && phaseT < sim.delay[i]) {
         // scattered, waiting to be provisioned
         if (reduced) continue
         const sd = sim.seed[i] * 6.283
@@ -290,6 +326,7 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
         // provisioned: spring back to the letter, pushed by the cursor
         let ox = O[i3], oy = O[i3 + 1], oz = O[i3 + 2]
         let vx = V[i3], vy = V[i3 + 1], vz = V[i3 + 2]
+        let bounceY = 0
         if (interactive) {
           if (hasHit) {
             const dx = tx + ox - hx, dy = ty + oy - hy
@@ -307,8 +344,12 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
           vy += (-K * oy - C * vy) * dt
           vz += (-K * oz - C * vz) * dt
           ox += vx * dt; oy += vy * dt; oz += vz * dt
+          if (letter >= 0 && letter < happyLetters) {
+            const tb = bounceT - letter * 0.07
+            if (tb > 0 && tb < TUNE.bounceDuration) bounceY = TUNE.bounceHeight * Math.sin((Math.PI * tb) / TUNE.bounceDuration)
+          }
         }
-        const moving = Math.abs(ox) + Math.abs(oy) + Math.abs(oz) + Math.abs(vx) + Math.abs(vy) + Math.abs(vz) > 1e-4
+        const moving = Math.abs(ox) + Math.abs(oy) + Math.abs(oz) + Math.abs(vx) + Math.abs(vy) + Math.abs(vz) > 1e-4 || bounceY !== 0
         if (!moving) {
           ox = oy = oz = vx = vy = vz = 0
           O[i3] = O[i3 + 1] = O[i3 + 2] = 0
@@ -321,7 +362,7 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
           V[i3] = vx; V[i3 + 1] = vy; V[i3 + 2] = vz
         }
         const disp = Math.sqrt(ox * ox + oy * oy + oz * oz)
-        px = tx + ox; py = ty + oy; pz = tz + oz
+        px = tx + ox; py = ty + oy + bounceY; pz = tz + oz
         angle = Math.min(disp * 2.5, 1.6)
         s = cs
         const c = Math.min(disp * 1.6, 1) * 0.85
@@ -341,6 +382,9 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
       mesh.instanceColor!.needsUpdate = true
     }
   })
+
+  // Clear the cursor label when the scene unmounts
+  useEffect(() => () => setCursorLabel(null), [])
 
   if (!layout || !sim) return null
   return (
