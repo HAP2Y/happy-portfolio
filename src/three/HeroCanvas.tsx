@@ -1,7 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import { NameCubes } from './NameCubes'
-import { BASE_CAMERA_Z, CAMERA_FOV } from './shared'
+import { BASE_CAMERA_Z, CAMERA_FOV, trackPointer } from './shared'
 
 export interface HeroCanvasProps {
   apply: boolean
@@ -13,9 +14,15 @@ export interface HeroCanvasProps {
 
 export default function HeroCanvas({ apply, reduced, lowPower, onReady, onAssembled }: HeroCanvasProps) {
   const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (reduced || !wrapRef.current) return
+    return trackPointer(wrapRef.current)
+  }, [reduced])
 
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
+    <div ref={wrapRef} style={{ position: 'absolute', inset: 0 }}>
       <Canvas
         flat
         dpr={dpr}

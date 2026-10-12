@@ -5,7 +5,7 @@ import { buildNameLayout, type NameLayout } from './textSampler'
 import { person } from '../content'
 import { cssVar } from '../lib/env'
 import { useTheme } from '../lib/theme'
-import { BASE_CAMERA_Z } from './shared'
+import { BASE_CAMERA_Z, pointer } from './shared'
 
 /* ── Tuning knobs ────────────────────────────────────────────────
  * All distances are in "cap heights" (1.0 = height of a capital letter). */
@@ -16,11 +16,19 @@ const TUNE = {
   assembleSpread: 0.75, // seconds: left → right stagger of the fly-in
   assembleJitter: 0.45, // seconds of random extra delay per cube
   assembleDuration: 0.85, // seconds each cube spends in flight (+ up to 0.45 random)
+  repelRadius: 0.62, // cursor influence radius
+  repelForce: 95, // push strength
+  springK: 70, // spring stiffness back to the letter
+  springDamping: 9, // lower = bouncier
+  tiltY: 0.16, // radians of yaw at the screen edge
+  tiltX: 0.09, // radians of pitch at the screen edge
 }
 
 interface Sim {
   total: number
   start: Float32Array
+  offset: Float32Array
+  vel: Float32Array
   axis: Float32Array
   rot: Float32Array
   delay: Float32Array
@@ -74,6 +82,8 @@ function createSim(layout: NameLayout): Sim {
   }
   return {
     total, start, axis, rot, delay, dur, arc, seed, end,
+    offset: new Float32Array(total * 3),
+    vel: new Float32Array(total * 3),
     rest: new Uint8Array(total),
     applyAt: null, assembled: false,
     firstFrame: true,
@@ -172,10 +182,23 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
     invalidate()
   }, [colors, sim, invalidate])
 
-  useFrame((state) => {
+  const ray = useMemo(() => new THREE.Raycaster(), [])
+  const tmp = useMemo(
+    () => ({
+      ndc: new THREE.Vector2(),
+      inv: new THREE.Matrix4(),
+      localRay: new THREE.Ray(),
+      plane: new THREE.Plane(new THREE.Vector3(0, 0, 1), 0),
+      hit: new THREE.Vector3(),
+    }),
+    [],
+  )
+
+  useFrame((state, rawDt) => {
     const mesh = meshRef.current
     const group = groupRef.current
     if (!mesh || !group || !sim || !layout || !mesh.instanceColor) return
+    const dt = Math.min(rawDt, 1 / 30)
     const t = state.clock.elapsedTime
 
     // Start the fly-in when the terminal says so.
@@ -197,11 +220,38 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
     group.scale.setScalar(scale)
     group.position.y = visH * (twoLines ? 0.07 : 0.035)
 
+    // Parallax tilt
+    const interactive = sim.assembled && !reduced
+    if (!reduced) {
+      const k = Math.min(1, dt * 3)
+      const tx = pointer.active ? pointer.x : 0
+      const ty = pointer.active ? pointer.y : 0
+      group.rotation.y += (tx * TUNE.tiltY - group.rotation.y) * k
+      group.rotation.x += (-ty * TUNE.tiltX - group.rotation.x) * k
+    }
+    group.updateMatrixWorld()
+
+    // Cursor → point on the name's plane (local space)
+    let hx = 0, hy = 0, hasHit = false
+    if (interactive && pointer.active) {
+      tmp.ndc.set(pointer.x, pointer.y)
+      ray.setFromCamera(tmp.ndc, camera)
+      tmp.inv.copy(group.matrixWorld).invert()
+      tmp.localRay.copy(ray.ray).applyMatrix4(tmp.inv)
+      if (tmp.localRay.intersectPlane(tmp.plane, tmp.hit)) {
+        hx = tmp.hit.x
+        hy = tmp.hit.y
+        hasHit = true
+      }
+    }
+
     const m = mesh.instanceMatrix.array as Float32Array
     const col = mesh.instanceColor!.array as Float32Array
     const T = layout.targets
-    const { start: S, axis: A } = sim
+    const { start: S, offset: O, vel: V, axis: A } = sim
     const cs = layout.cell * TUNE.cubeFill
+    const R = TUNE.repelRadius, R2 = R * R
+    const { springK: K, springDamping: C, repelForce: P } = TUNE
     const { ink, accent, faint } = colors
     let changed = sim.firstFrame
 
@@ -237,13 +287,47 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
         cb = accent.b + (ink.b - accent.b) * c
         changed = true
       } else {
-        // provisioned: sits on its letter
-        if (sim.rest[i] && !sim.firstFrame) continue
-        sim.rest[i] = 1
-        px = tx; py = ty; pz = tz
-        angle = 0
+        // provisioned: spring back to the letter, pushed by the cursor
+        let ox = O[i3], oy = O[i3 + 1], oz = O[i3 + 2]
+        let vx = V[i3], vy = V[i3 + 1], vz = V[i3 + 2]
+        if (interactive) {
+          if (hasHit) {
+            const dx = tx + ox - hx, dy = ty + oy - hy
+            const d2 = dx * dx + dy * dy
+            if (d2 < R2) {
+              const d = Math.sqrt(d2) + 1e-4
+              const f = 1 - d / R
+              const force = f * f * P
+              vx += (dx / d) * force * dt
+              vy += (dy / d) * force * dt
+              vz += force * 0.6 * dt
+            }
+          }
+          vx += (-K * ox - C * vx) * dt
+          vy += (-K * oy - C * vy) * dt
+          vz += (-K * oz - C * vz) * dt
+          ox += vx * dt; oy += vy * dt; oz += vz * dt
+        }
+        const moving = Math.abs(ox) + Math.abs(oy) + Math.abs(oz) + Math.abs(vx) + Math.abs(vy) + Math.abs(vz) > 1e-4
+        if (!moving) {
+          ox = oy = oz = vx = vy = vz = 0
+          O[i3] = O[i3 + 1] = O[i3 + 2] = 0
+          V[i3] = V[i3 + 1] = V[i3 + 2] = 0
+          if (sim.rest[i] && !sim.firstFrame) continue
+          sim.rest[i] = 1
+        } else {
+          sim.rest[i] = 0
+          O[i3] = ox; O[i3 + 1] = oy; O[i3 + 2] = oz
+          V[i3] = vx; V[i3 + 1] = vy; V[i3 + 2] = vz
+        }
+        const disp = Math.sqrt(ox * ox + oy * oy + oz * oz)
+        px = tx + ox; py = ty + oy; pz = tz + oz
+        angle = Math.min(disp * 2.5, 1.6)
         s = cs
-        cr = ink.r; cg = ink.g; cb = ink.b
+        const c = Math.min(disp * 1.6, 1) * 0.85
+        cr = ink.r + (accent.r - ink.r) * c
+        cg = ink.g + (accent.g - ink.g) * c
+        cb = ink.b + (accent.b - ink.b) * c
         changed = true
       }
 
