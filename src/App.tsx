@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Header } from './components/Header'
 import { Cursor } from './components/Cursor'
 import { Wipe } from './components/Wipe'
-import { initReveals } from './components/ui'
+import { Toast, initMagnetic, initReveals } from './components/ui'
 import { useReducedMotion } from './lib/env'
 import { initSmoothScroll } from './lib/scroll'
 
@@ -15,11 +15,21 @@ export function App() {
     return initSmoothScroll()
   }, [reduced])
 
-  // Heading reveals
-  useEffect(() => initReveals(reduced), [reduced])
+  // Heading reveals + magnetic links
+  useEffect(() => {
+    const offReveal = initReveals(reduced)
+    const offMagnetic = initMagnetic()
+    return () => {
+      offReveal()
+      offMagnetic()
+    }
+  }, [reduced])
 
   return (
     <>
+      <a href="#main" className="skip">
+        Skip to content
+      </a>
       <Header />
       <main id="main">
         {/* placeholder until the real hero lands */}
@@ -44,6 +54,7 @@ export function App() {
         </section>
       </main>
       <Wipe />
+      <Toast />
       <Cursor />
     </>
   )

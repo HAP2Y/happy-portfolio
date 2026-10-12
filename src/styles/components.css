@@ -23,6 +23,12 @@
   transform: translateY(22px);
 }
 
+/* ── Scramble ───────────────────────────────────────────── */
+.scramble {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 /* ── Header ─────────────────────────────────────────────── */
 .header {
   position: fixed;
@@ -187,4 +193,42 @@
 .wipe-caption {
   font-family: var(--font-mono);
   font-size: var(--fs-small);
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 85;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  letter-spacing: 0.02em;
+  transform: translate(-50%, calc(100% + 48px));
+  visibility: hidden;
+  transition: transform 0.5s var(--ease-out), visibility 0s linear 0.5s;
+  pointer-events: none;
+}
+.toast[data-show] {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  transition: transform 0.5s var(--ease-out), visibility 0s;
+}
+.toast-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+}
+
+/* ── Buttons & link lists shared by sections ────────────── */
+.pill-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
 }
