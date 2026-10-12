@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Header } from './components/Header'
 import { Cursor } from './components/Cursor'
 import { Wipe } from './components/Wipe'
+import { initReveals } from './components/ui'
 import { useReducedMotion } from './lib/env'
 import { initSmoothScroll } from './lib/scroll'
 
@@ -13,6 +14,9 @@ export function App() {
     if (reduced) return
     return initSmoothScroll()
   }, [reduced])
+
+  // Heading reveals
+  useEffect(() => initReveals(reduced), [reduced])
 
   return (
     <>

@@ -1,3 +1,28 @@
+/* ── Reveal headings ────────────────────────────────────── */
+.rl {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.rl-i {
+  display: block;
+  transition: transform 1.05s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.js [data-reveal]:not(.is-in) .rl-i {
+  transform: translateY(108%);
+}
+
+.fade-in {
+  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out);
+  transition-delay: var(--delay, 0ms);
+}
+.js .fade-in[data-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(22px);
+}
+
 /* ── Header ─────────────────────────────────────────────── */
 .header {
   position: fixed;
