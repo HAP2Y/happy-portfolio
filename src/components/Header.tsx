@@ -2,13 +2,8 @@ import { useEffect, useState } from 'react'
 import { nav, person } from '../content'
 import { toggleTheme, useTheme } from '../lib/theme'
 import { useReducedMotion } from '../lib/env'
-import { getScrollY, scrollToEl } from '../lib/scroll'
-
-/** Smooth-scrolls to a section by id. */
-function jumpTo(id: string) {
-  const el = document.getElementById(id)
-  if (el) scrollToEl(el)
-}
+import { getScrollY } from '../lib/scroll'
+import { wipeTo } from './Wipe'
 
 export function Header() {
   const theme = useTheme()
@@ -48,7 +43,7 @@ export function Header() {
         data-magnetic="0.25"
         onClick={(e) => {
           e.preventDefault()
-          jumpTo('top')
+          wipeTo('top', '~')
         }}
       >
         <span className="header-mark" aria-hidden="true" />
@@ -64,7 +59,7 @@ export function Header() {
                 data-magnetic="0.3"
                 onClick={(e) => {
                   e.preventDefault()
-                  jumpTo(item.id)
+                  wipeTo(item.id, item.path)
                 }}
               >
                 <span className="u">{item.label}</span>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Header } from './components/Header'
+import { Wipe } from './components/Wipe'
 import { useReducedMotion } from './lib/env'
 import { initSmoothScroll } from './lib/scroll'
 
@@ -37,6 +38,7 @@ export function App() {
           <p className="label">contact</p>
         </section>
       </main>
+      <Wipe />
     </>
   )
 }

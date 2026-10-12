@@ -77,3 +77,19 @@
     margin-left: auto;
   }
 }
+
+/* ── Wipe ───────────────────────────────────────────────── */
+.wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  place-items: center;
+  background: var(--ink);
+  color: var(--on-ink);
+  pointer-events: none;
+}
+.wipe-caption {
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+}
