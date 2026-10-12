@@ -1,0 +1,62 @@
+/*
+ * Design tokens.
+ * Layout: a quiet 12-column field with wide margins. Big grotesk type carries
+ * the page; mono metadata sits at the edges like a terminal readout.
+ * One accent (Terraform-adjacent violet), used for "provisioning" moments only.
+ */
+:root {
+  /* colour */
+  --bg: #f4f3ef;
+  --ink: #0e0e0e;
+  --muted: #6b6a66;
+  --line: #dad9d3;
+  --surface: #ebeae5;
+  --accent: #7b42bc;
+  --on-accent: #f4f3ef;
+  --on-ink: #f4f3ef;
+
+  /* type */
+  --font-display: 'General Sans', 'Geist Variable', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --fs-label: 0.75rem; /* 12px mono labels */
+  --fs-small: 0.875rem;
+  --fs-body: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --fs-lead: clamp(1.5rem, 1.1rem + 1.6vw, 2.6rem);
+  --fs-h3: clamp(1.6rem, 1.2rem + 1.3vw, 2.4rem);
+  --fs-h2: clamp(2.9rem, 1.6rem + 5.6vw, 7.5rem);
+  --fs-huge: clamp(3.4rem, 1.2rem + 10vw, 13rem);
+
+  /* space & motion */
+  --gutter: clamp(16px, 4vw, 56px);
+  --section-y: clamp(96px, 16vh, 200px);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --header-h: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e0e0e;
+    --ink: #f4f3ef;
+    --muted: #8e8d88;
+    --line: #2a2a28;
+    --surface: #171716;
+    --accent: #a77de3;
+    --on-accent: #0e0e0e;
+    --on-ink: #0e0e0e;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e0e0e;
+  --ink: #f4f3ef;
+  --muted: #8e8d88;
+  --line: #2a2a28;
+  --surface: #171716;
+  --accent: #a77de3;
+  --on-accent: #0e0e0e;
+  --on-ink: #0e0e0e;
+  color-scheme: dark;
+}
