@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import { NameCubes } from './NameCubes'
+import { World } from './World'
 import { BASE_CAMERA_Z, CAMERA_FOV, trackPointer } from './shared'
 
 export interface HeroCanvasProps {
@@ -37,6 +38,7 @@ export default function HeroCanvas({ apply, reduced, lowPower, onReady, onAssemb
         aria-hidden="true"
         style={{ pointerEvents: 'none' }}
       >
+        <World lowPower={lowPower} reduced={reduced} />
         <NameCubes apply={apply} reduced={reduced} lowPower={lowPower} onReady={onReady} onAssembled={onAssembled} />
       </Canvas>
     </div>

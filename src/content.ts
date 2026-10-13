@@ -10,7 +10,7 @@
  */
 
 export const site = {
-  title: 'Happy Patel — Platform / DevOps Engineer',
+  title: 'Happy Patel — Platform / DevOps / Frontend Engineer',
   description:
     'Happy Patel builds the infrastructure and automation other engineers depend on. AWS, Terraform, Kubernetes, Python and Go. Ex-Guidewire. India → Toronto, open to remote.',
   url: 'https://happypatel.dev', // ✎ your production URL (used for canonical + Open Graph)
@@ -21,11 +21,11 @@ export const person = {
   name: 'Happy Patel',
   firstName: 'Happy',
   lastName: 'Patel',
-  role: 'Platform / DevOps Engineer',
+  role: 'Platform / DevOps / Frontend Engineer',
   tagline: 'I build the infrastructure and automation other engineers depend on.',
-  location: 'India → Toronto, open to remote.',
+  location: 'Open to offers in Canada',
   /** Shown in the hero corner. A playful nod to the move. */
-  regionLine: 'ap-south-1 → ca-central-1',
+  regionLine: 'ca-central-1',
   email: 'phappy1422@gmail.com',
   resume: 'Happy-Patel-Resume.pdf', // file in /public — replace with your latest CV
 }
@@ -67,7 +67,7 @@ export const about = {
   ],
   /** Rendered like `terraform state show`. */
   state: [
-    ['role', 'Platform / DevOps Engineer'],
+    ['role', 'Platform / DevOps / Frontend Engineer'],
     ['tenure', '4y 1m @ Guidewire'],
     ['education', 'BSc Computer Science, York University'],
     ['certified', 'Terraform Associate (004)'],
