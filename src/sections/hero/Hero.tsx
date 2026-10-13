@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { Component, Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { hero, person } from '../../content'
 import { hasWebGL, isLowPower, useReducedMotion } from '../../lib/env'
 import { scrollToEl } from '../../lib/scroll'
@@ -30,6 +30,8 @@ export function Hero() {
   const [sceneReady, setSceneReady] = useState(false)
   const [typed, setTyped] = useState(false)
   const [assembled, setAssembled] = useState(false)
+  const [visible, setVisible] = useState(true)
+  const ref = useRef<HTMLElement>(null)
 
   // Defer the 3D chunk until the page has painted.
   useEffect(() => {
@@ -37,6 +39,15 @@ export function Hero() {
     const id = requestAnimationFrame(() => setLoad3D(true))
     return () => cancelAnimationFrame(id)
   }, [webgl])
+
+  // Pause rendering while the hero is off-screen.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: '80px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
   // Without WebGL the typographic name stands in for the cubes.
   useEffect(() => {
@@ -57,7 +68,7 @@ export function Hero() {
   }, [reduced, sceneReady])
 
   return (
-    <section id="top" className={styles.hero} data-assembled={assembled || undefined}>
+    <section id="top" ref={ref} className={styles.hero} data-assembled={assembled || undefined}>
       <div className={styles.canvas} aria-hidden="true">
         {webgl && load3D && (
           <SceneBoundary onError={onSceneError}>
@@ -66,6 +77,7 @@ export function Hero() {
                 apply={apply}
                 reduced={reduced}
                 lowPower={lowPower}
+                visible={visible}
                 onReady={onReady}
                 onAssembled={onAssembled}
               />
