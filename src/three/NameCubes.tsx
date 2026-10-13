@@ -156,7 +156,40 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
   const sim = useMemo(() => (layout ? createSim(layout) : null), [layout])
   const colorBuffer = useMemo(() => new Float32Array((sim?.total ?? 1) * 3), [sim])
   const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
-  const material = useMemo(() => new THREE.MeshLambertMaterial({ color: '#ffffff' }), [])
+  // Flat voxel shading: faces toward the camera take the cube colour, side
+  // faces fade toward the page colour so each cube reads as a cube.
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: { uBg: { value: new THREE.Color() }, uSide: { value: 0.55 } },
+        vertexShader: /* glsl */ `
+          varying vec3 vColor;
+          varying vec3 vN;
+          void main() {
+            vN = normalize(normalMatrix * mat3(instanceMatrix) * normal);
+            #ifdef USE_INSTANCING_COLOR
+              vColor = instanceColor;
+            #else
+              vColor = vec3(1.0);
+            #endif
+            gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uBg;
+          uniform float uSide;
+          varying vec3 vColor;
+          varying vec3 vN;
+          void main() {
+            vec3 n = normalize(vN);
+            float side = (1.0 - abs(n.z)) * uSide + max(n.y, 0.0) * 0.12;
+            gl_FragColor = vec4(mix(vColor, uBg, clamp(side, 0.0, 1.0)), 1.0);
+            #include <colorspace_fragment>
+          }
+        `,
+      }),
+    [],
+  )
   useEffect(() => () => { geometry.dispose(); material.dispose() }, [geometry, material])
 
   // Theme colours (linear space) read from CSS tokens.
@@ -165,8 +198,9 @@ export function NameCubes({ apply, reduced, lowPower, onReady, onAssembled }: Pr
     const ink = new THREE.Color(cssVar('--ink') || '#0e0e0e')
     const accent = new THREE.Color(cssVar('--accent') || '#7b42bc')
     const faint = bg.clone().lerp(ink, 0.28)
+    material.uniforms.uBg.value.copy(bg)
     return { ink, accent, faint, theme }
-  }, [theme])
+  }, [theme, material])
 
   // Signal readiness once cubes exist.
   useEffect(() => {

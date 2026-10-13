@@ -37,9 +37,6 @@ export default function HeroCanvas({ apply, reduced, lowPower, onReady, onAssemb
         aria-hidden="true"
         style={{ pointerEvents: 'none' }}
       >
-        <ambientLight intensity={1.6} />
-        <directionalLight position={[4, 6, 8]} intensity={2.2} />
-        <directionalLight position={[-6, -2, 4]} intensity={0.6} />
         <NameCubes apply={apply} reduced={reduced} lowPower={lowPower} onReady={onReady} onAssembled={onAssembled} />
       </Canvas>
     </div>
