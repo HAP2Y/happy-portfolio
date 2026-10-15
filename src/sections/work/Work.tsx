@@ -4,6 +4,8 @@ import { RevealLines } from '../../components/ui'
 import { useMedia, useReducedMotion } from '../../lib/env'
 import { ScrollTrigger, gsap, getLenis, getScrollY, scrollToY } from '../../lib/scroll'
 import { ProjectCardView } from './cards/ProjectCard'
+import { CertCard } from './cards/CertCard'
+import { EndCard } from './cards/EndCard'
 import styles from './Work.module.css'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -213,9 +215,11 @@ export function Work() {
                 <RevealLines lines={work.heading} className={`h2 ${styles.heading}`} id="work-title" />
               </li>
             )}
-            {projects.map((p, i) => (
-              <ProjectCardView key={p.kind} index={i} project={p} touch={touch} reduced={reduced} />
-            ))}
+            {projects.map((p, i) => {
+              if (p.kind === 'cert') return <CertCard key={p.kind} index={i} project={p} touch={touch} reduced={reduced} />
+              if (p.kind === 'end') return <EndCard key={p.kind} index={i} project={p} touch={touch} reduced={reduced} />
+              return <ProjectCardView key={p.kind} index={i} project={p} touch={touch} reduced={reduced} />
+            })}
           </ol>
         </div>
 

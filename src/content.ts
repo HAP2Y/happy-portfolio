@@ -153,7 +153,7 @@ export const cert = {
   name: 'HashiCorp Certified: Terraform Associate (004)',
   issuer: 'HashiCorp',
   credentialId: 'ADD-CREDENTIAL-ID', // ✎ paste your credential ID
-  verifyUrl: 'https://www.credly.com/', // ✎ paste your Credly verification link
+  verifyUrl: 'https://www.credly.com/badges/47b7ba9d-6de8-4574-bc48-f7e5e56dbc80/', // ✎ paste your Credly verification link
   tag: 'Repo Factory was built while preparing for this exam.',
 }
 
