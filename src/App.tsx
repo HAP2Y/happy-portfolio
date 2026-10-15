@@ -5,6 +5,7 @@ import { Wipe } from './components/Wipe'
 import { Toast, initMagnetic, initReveals } from './components/ui'
 import { Hero } from './sections/hero/Hero'
 import { About } from './sections/about/About'
+import { Work } from './sections/work/Work'
 import { useReducedMotion } from './lib/env'
 import { initSmoothScroll } from './lib/scroll'
 
@@ -36,10 +37,7 @@ export function App() {
       <main id="main">
         <Hero />
         <About />
-        {/* placeholder until the real section lands */}
-        <section id="work" className="section wrap" style={{ minHeight: '100svh' }}>
-          <p className="label">work</p>
-        </section>
+        <Work />
         {/* placeholder until the real section lands */}
         <section id="experience" className="section wrap" style={{ minHeight: '100svh' }}>
           <p className="label">experience</p>

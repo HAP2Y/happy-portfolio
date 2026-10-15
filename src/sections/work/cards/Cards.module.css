@@ -1,0 +1,436 @@
+/* ── shell ─────────────────────────────────────────────── */
+.item {
+  flex: none;
+  display: flex;
+}
+
+.card {
+  position: relative;
+  width: clamp(320px, 30vw, 520px);
+  height: min(64svh, 640px);
+  min-height: 470px;
+  display: grid;
+  grid-template-rows: auto minmax(140px, 1fr) auto;
+  gap: 18px;
+  padding: clamp(18px, 1.5vw, 26px);
+  background: var(--surface);
+  color: var(--ink);
+  transition: background-color 0.4s var(--ease-out), translate 0.6s var(--ease-out);
+}
+.card:focus-visible,
+.card:has(.stretch:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.card[data-active] {
+  translate: 0 -6px;
+}
+
+:global([data-mode='native']) .card {
+  width: min(82vw, 420px);
+  height: auto;
+  min-height: 520px;
+  grid-template-rows: auto 220px auto;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.body {
+  display: grid;
+  gap: 10px;
+  align-content: end;
+}
+.title {
+  font-size: var(--fs-h3);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.stretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.stretch:focus-visible {
+  outline: none;
+}
+.summary {
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 54ch;
+  text-wrap: pretty;
+}
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 16px;
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.link {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* ── 01 Repo Factory: terraform ───────────────────────── */
+.tf {
+  margin: 0;
+  height: 100%;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: clamp(10.5px, 0.8vw, 13px);
+  line-height: 1.72;
+  white-space: pre;
+  overflow: hidden;
+}
+.tfLine {
+  display: block;
+}
+.tfCmd,
+.tfPlan {
+  color: var(--ink);
+}
+.tfPlan {
+  font-weight: 700;
+}
+.tfAdd {
+  color: var(--accent);
+}
+.tfMuted,
+.tfComment {
+  color: var(--muted);
+}
+.tf[data-mode='input'] .tfMuted {
+  color: var(--ink);
+}
+.tfCaret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: -0.17em;
+  background: currentColor;
+  animation: caret 1s steps(1) infinite;
+}
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── 02 SmartSort: router lanes ───────────────────────── */
+.sortStage {
+  position: absolute;
+  inset: 0;
+}
+.sortCanvas {
+  width: 100%;
+  height: 100%;
+}
+.sortDone {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+}
+
+/* ── 03 Triage: tickets ───────────────────────────────── */
+.triage {
+  position: absolute;
+  inset: 14px 16px;
+}
+.triageCol {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out);
+}
+.triage[data-sorted] .triageCol {
+  opacity: 1;
+  transition-delay: 0.3s;
+}
+.ticket {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  column-gap: 6px;
+  padding: 0 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.25;
+  transition: transform 0.75s var(--ease-out);
+  overflow: hidden;
+}
+.ticketId {
+  color: var(--ink);
+}
+.ticketText {
+  grid-column: 1;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ticketCheck {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.triage[data-sorted] .ticketCheck {
+  opacity: 1;
+  transition-delay: 0.7s;
+}
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.barTrack {
+  position: relative;
+  height: 6px;
+  background: var(--line);
+  overflow: hidden;
+}
+.barFill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: left center;
+  transition: transform 0.9s var(--ease-out);
+}
+.triage[data-sorted] .barFill {
+  transition-delay: 0.35s;
+}
+.barValue {
+  color: var(--ink);
+  min-width: 4ch;
+  text-align: right;
+}
+
+/* ── 04 Raging Sea ────────────────────────────────────── */
+.seaStage {
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+}
+.seaCanvas {
+  width: 100%;
+  height: 100%;
+}
+.seaLabel {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+}
+
+/* ── 05 Certificate (flip) ────────────────────────────── */
+.cert {
+  padding: 0;
+  background: transparent;
+  perspective: 1400px;
+  display: block;
+}
+.flipInner {
+  position: relative;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.9s var(--ease-out);
+}
+.cert[data-flipped] .flipInner {
+  transform: rotateY(180deg);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(140px, 1fr) auto;
+  gap: 18px;
+  padding: clamp(18px, 1.5vw, 26px);
+  background: var(--surface);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.back {
+  transform: rotateY(180deg);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.back :global(.label) {
+  color: color-mix(in srgb, var(--on-ink) 62%, transparent);
+}
+.cert[data-static] .flipInner {
+  height: auto;
+}
+.cert[data-static] .face {
+  position: relative;
+  min-height: 100%;
+}
+:global([data-mode='native']) .cert {
+  min-height: 520px;
+}
+
+.certStage {
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  min-height: 0;
+  overflow: hidden;
+}
+.seal {
+  width: min(64%, 230px);
+  max-width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 18px;
+  text-align: center;
+  border: 1px solid var(--ink);
+  box-shadow: inset 0 0 0 6px var(--bg), inset 0 0 0 7px var(--ink);
+}
+.sealName {
+  font-size: clamp(1rem, 0.8rem + 0.6vw, 1.3rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.sealCode {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 1.4rem + 1.6vw, 3rem);
+  line-height: 1;
+  color: var(--accent);
+}
+.tagChip {
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 6px 10px;
+  border: 1px solid currentColor;
+  max-width: 100%;
+}
+.flipHint {
+  margin-top: 2px;
+}
+.certMeta {
+  display: grid;
+  gap: 4px;
+}
+.backBody {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+.credId {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 0.8rem + 0.6vw, 1.35rem);
+  overflow-wrap: anywhere;
+  margin-bottom: 14px;
+}
+.credIssuer {
+  font-size: 1.1rem;
+}
+.verify {
+  position: relative;
+  z-index: 3;
+  justify-self: start;
+  font-size: var(--fs-h3);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+/* ── 06 End card ──────────────────────────────────────── */
+.end {
+  width: clamp(280px, 24vw, 420px);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+.end :global(.label) {
+  color: color-mix(in srgb, var(--on-ink) 62%, transparent);
+}
+.end:focus-visible {
+  outline: 2px solid var(--accent);
+}
+:global([data-mode='native']) .end {
+  width: min(70vw, 340px);
+}
+.repoGrid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  align-content: center;
+  padding: 6%;
+}
+.repoGrid span {
+  aspect-ratio: 1;
+  background: currentColor;
+  opacity: 0.14;
+  transform: scale(0.55);
+  transition: opacity 0.3s var(--ease-out), transform 0.45s var(--ease-out);
+}
+.end[data-active] .repoGrid span {
+  opacity: 1;
+  transform: none;
+}
+.end[data-static] .repoGrid span {
+  opacity: 0.8;
+  transform: none;
+}
+.endTitle {
+  font-size: clamp(2rem, 1rem + 2.2vw, 3.3rem);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+.end .summary {
+  color: color-mix(in srgb, var(--on-ink) 66%, transparent);
+}
+.end .link {
+  color: var(--on-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tfCaret {
+    animation: none;
+  }
+  .card[data-active] {
+    translate: none;
+  }
+}

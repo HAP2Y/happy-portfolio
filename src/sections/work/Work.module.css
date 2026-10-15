@@ -1,0 +1,115 @@
+.work {
+  position: relative;
+}
+
+.pin {
+  height: 100svh;
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  row-gap: clamp(16px, 3vh, 32px);
+  padding-top: calc(var(--header-h) + 8px);
+  padding-bottom: clamp(18px, 3.5vh, 36px);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.eyebrow {
+  margin-bottom: 0;
+  margin-inline: var(--gutter);
+  padding-inline: 0;
+}
+
+.viewport {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  overflow: clip;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.viewport:focus {
+  outline: none;
+}
+.viewport[data-dragging] * {
+  pointer-events: none;
+}
+
+.track {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: clamp(14px, 1.6vw, 24px);
+  padding-inline: var(--gutter);
+  width: max-content;
+  will-change: transform;
+}
+
+.intro {
+  flex: none;
+  width: clamp(320px, 34vw, 600px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-right: clamp(12px, 3vw, 48px);
+}
+.heading {
+  font-size: clamp(2.6rem, 3.5vw, 5.6rem);
+}
+
+.progressRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+}
+.progress {
+  position: relative;
+  height: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progressFill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: left center;
+  transform: scaleX(0.0001);
+}
+.counter {
+  font-variant-numeric: tabular-nums;
+  min-width: 7ch;
+  text-align: right;
+}
+
+/* ── native swipe carousel (touch, narrow, reduced motion) ── */
+.work[data-mode='native'] .pin {
+  height: auto;
+  min-height: 0;
+  grid-template-rows: auto auto auto auto;
+  padding-block: var(--section-y) 0;
+}
+.headingNative {
+  font-size: var(--fs-h2);
+  margin-block: clamp(24px, 5vh, 56px) 8px;
+}
+.work[data-mode='native'] .viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-block: 8px;
+  user-select: auto;
+}
+.work[data-mode='native'] .viewport::-webkit-scrollbar {
+  display: none;
+}
+.work[data-mode='native'] .track > li {
+  scroll-snap-align: start;
+  scroll-margin-left: var(--gutter);
+}
+
