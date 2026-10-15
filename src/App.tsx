@@ -6,6 +6,7 @@ import { Toast, initMagnetic, initReveals } from './components/ui'
 import { Hero } from './sections/hero/Hero'
 import { About } from './sections/about/About'
 import { Work } from './sections/work/Work'
+import { Experience } from './sections/experience/Experience'
 import { useReducedMotion } from './lib/env'
 import { ScrollTrigger, initSmoothScroll } from './lib/scroll'
 
@@ -46,10 +47,7 @@ export function App() {
         <Hero />
         <About />
         <Work />
-        {/* placeholder until the real section lands */}
-        <section id="experience" className="section wrap" style={{ minHeight: '100svh' }}>
-          <p className="label">experience</p>
-        </section>
+        <Experience />
         {/* placeholder until the real section lands */}
         <section id="contact" className="section wrap" style={{ minHeight: '100svh' }}>
           <p className="label">contact</p>
