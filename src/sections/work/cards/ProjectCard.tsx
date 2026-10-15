@@ -1,6 +1,7 @@
-import { useId, useRef } from 'react'
+import { useId, useRef, type ReactNode } from 'react'
 import type { ProjectCard } from '../../../content'
 import { useCardActive } from '../../../lib/hooks'
+import { RepoFactoryStage } from './RepoFactoryStage'
 import styles from './Cards.module.css'
 
 export interface CardProps {
@@ -11,6 +12,15 @@ export interface CardProps {
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
+
+function Stage({ kind, active, reduced }: { kind: ProjectCard['kind']; active: boolean; reduced: boolean }): ReactNode {
+  switch (kind) {
+    case 'repo-factory':
+      return <RepoFactoryStage active={active} reduced={reduced} />
+    default:
+      return null
+  }
+}
 
 /**
  * A project card: number + kicker, an interactive stage that plays while the
@@ -41,7 +51,9 @@ export function ProjectCardView({ index, project, touch, reduced }: CardProps) {
           <span className="label">{project.kicker}</span>
         </div>
 
-        <div className={styles.stage} aria-hidden="true" />
+        <div className={styles.stage} aria-hidden="true">
+          <Stage kind={project.kind} active={active} reduced={reduced} />
+        </div>
 
         <div className={styles.body}>
           <h3 id={titleId} className={styles.title}>
