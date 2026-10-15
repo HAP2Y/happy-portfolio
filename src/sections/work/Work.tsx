@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { projects, work } from '../../content'
 import { RevealLines } from '../../components/ui'
 import { useMedia, useReducedMotion } from '../../lib/env'
-import { ScrollTrigger, gsap } from '../../lib/scroll'
+import { ScrollTrigger, gsap, getLenis, getScrollY, scrollToY } from '../../lib/scroll'
 import { ProjectCardView } from './cards/ProjectCard'
 import styles from './Work.module.css'
 
@@ -12,7 +12,9 @@ const pad = (n: number) => String(n).padStart(2, '0')
  * Recent projects & certificates.
  *
  * Desktop (fine pointer, ≥ 900px, motion allowed): the section pins and
- * vertical scroll drives the track sideways (GSAP ScrollTrigger).
+ * vertical scroll drives the track sideways (GSAP ScrollTrigger). Click-drag
+ * and horizontal trackpad swipes move the page scroll, so every input stays
+ * in sync with the pin.
  *
  * Touch, narrow screens and reduced motion: a native swipe carousel with
  * scroll-snap. Same progress bar and counter.
@@ -28,6 +30,7 @@ export function Work() {
   const trackRef = useRef<HTMLOListElement>(null)
   const barRef = useRef<HTMLSpanElement>(null)
   const countRef = useRef<HTMLSpanElement>(null)
+  const stRef = useRef<ScrollTrigger | null>(null)
   const total = projects.length
 
   const setProgress = (p: number) => {
@@ -41,7 +44,7 @@ export function Work() {
     if (!pinned || !pin || !track || !viewport) return
     const distance = () => Math.max(0, track.scrollWidth - viewport.clientWidth)
     const ctx = gsap.context(() => {
-      gsap.to(track, {
+      const tween = gsap.to(track, {
         x: () => -distance(),
         ease: 'none',
         scrollTrigger: {
@@ -54,6 +57,7 @@ export function Work() {
           onUpdate: (self) => setProgress(self.progress),
         },
       })
+      stRef.current = tween.scrollTrigger ?? null
     }, pin)
     // fonts and layout can shift widths after first paint
     const ro = new ResizeObserver(() => ScrollTrigger.refresh())
@@ -61,6 +65,7 @@ export function Work() {
     return () => {
       ro.disconnect()
       ctx.revert()
+      stRef.current = null
     }
   }, [pinned])
 
@@ -77,6 +82,118 @@ export function Work() {
     return () => viewport.removeEventListener('scroll', onScroll)
   }, [pinned])
 
+  // ── Click-drag + horizontal trackpad swipe ───────────────
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    let down = false
+    let moved = 0
+    let startX = 0
+    let start = 0
+    let lastX = 0
+    let lastT = 0
+    let velocity = 0
+
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return
+      down = true
+      moved = 0
+      startX = lastX = e.clientX
+      lastT = performance.now()
+      velocity = 0
+      start = pinned ? getScrollY() : viewport.scrollLeft
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!down) return
+      const dx = startX - e.clientX
+      moved = Math.max(moved, Math.abs(dx))
+      if (moved > 4) {
+        viewport.dataset.dragging = ''
+        viewport.setPointerCapture?.(e.pointerId)
+      }
+      const now = performance.now()
+      velocity = (lastX - e.clientX) / Math.max(1, now - lastT)
+      lastX = e.clientX
+      lastT = now
+      if (pinned) scrollToY(start + dx, true)
+      else viewport.scrollLeft = start + dx
+    }
+    const onUp = (e: PointerEvent) => {
+      if (!down) return
+      down = false
+      delete viewport.dataset.dragging
+      viewport.releasePointerCapture?.(e.pointerId)
+      // a little inertia
+      if (moved > 4 && Math.abs(velocity) > 0.2) {
+        const fling = velocity * 260
+        if (pinned) scrollToY(getScrollY() + fling)
+        else viewport.scrollBy({ left: fling, behavior: 'smooth' })
+      }
+    }
+    // A drag shouldn't click the card it ends on.
+    const onClick = (e: MouseEvent) => {
+      if (moved > 4) {
+        e.preventDefault()
+        e.stopPropagation()
+        moved = 0
+      }
+    }
+    const onWheel = (e: WheelEvent) => {
+      if (!pinned) return
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+      e.preventDefault()
+      const lenis = getLenis()
+      if (lenis) lenis.scrollTo(lenis.targetScroll + e.deltaX)
+      else window.scrollBy(0, e.deltaX)
+    }
+    const onDragStart = (e: DragEvent) => e.preventDefault()
+
+    viewport.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    viewport.addEventListener('click', onClick, true)
+    viewport.addEventListener('wheel', onWheel, { passive: false })
+    viewport.addEventListener('dragstart', onDragStart)
+    return () => {
+      viewport.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      viewport.removeEventListener('click', onClick, true)
+      viewport.removeEventListener('wheel', onWheel)
+      viewport.removeEventListener('dragstart', onDragStart)
+    }
+  }, [pinned])
+
+  // ── Keyboard: bring a focused card into view ──────────────
+  useEffect(() => {
+    const track = trackRef.current, viewport = viewportRef.current
+    if (!track || !viewport) return
+    const onFocus = (e: FocusEvent) => {
+      const item = (e.target as HTMLElement).closest<HTMLElement>('[data-card]')
+      if (!item) return
+      if (pinned && stRef.current) {
+        const st = stRef.current
+        const distance = st.end - st.start
+        const inset = parseFloat(getComputedStyle(track).paddingLeft) || 0
+        const offset = Math.min(distance, Math.max(0, item.offsetLeft - inset))
+        scrollToY(st.start + offset)
+      } else {
+        const left = item.offsetLeft - (parseFloat(getComputedStyle(track).paddingLeft) || 0)
+        viewport.scrollTo({ left, behavior: reduced ? 'auto' : 'smooth' })
+      }
+    }
+    track.addEventListener('focusin', onFocus)
+    // overflow: clip can't scroll, but guard browsers that fall back to hidden
+    const reset = () => {
+      if (pinned && viewport.scrollLeft !== 0) viewport.scrollLeft = 0
+    }
+    viewport.addEventListener('scroll', reset)
+    return () => {
+      track.removeEventListener('focusin', onFocus)
+      viewport.removeEventListener('scroll', reset)
+    }
+  }, [pinned, reduced])
+
   return (
     <section id="work" className={styles.work} data-mode={pinned ? 'pinned' : 'native'} aria-labelledby="work-title">
       <div ref={pinRef} className={styles.pin}>
@@ -89,7 +206,7 @@ export function Work() {
 
         {!pinned && <RevealLines lines={work.heading} className={`h2 wrap ${styles.headingNative}`} id="work-title" />}
 
-        <div ref={viewportRef} className={styles.viewport} tabIndex={-1}>
+        <div ref={viewportRef} className={styles.viewport} data-cursor="Drag" tabIndex={-1}>
           <ol ref={trackRef} className={styles.track}>
             {pinned && (
               <li className={styles.intro}>
