@@ -7,6 +7,7 @@ import { Hero } from './sections/hero/Hero'
 import { About } from './sections/about/About'
 import { Work } from './sections/work/Work'
 import { Experience } from './sections/experience/Experience'
+import { Contact } from './sections/contact/Contact'
 import { useReducedMotion } from './lib/env'
 import { ScrollTrigger, initSmoothScroll } from './lib/scroll'
 
@@ -48,10 +49,7 @@ export function App() {
         <About />
         <Work />
         <Experience />
-        {/* placeholder until the real section lands */}
-        <section id="contact" className="section wrap" style={{ minHeight: '100svh' }}>
-          <p className="label">contact</p>
-        </section>
+        <Contact />
       </main>
       <Wipe />
       <Toast />
