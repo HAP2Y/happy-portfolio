@@ -4,6 +4,7 @@ import { useCardActive } from '../../../lib/hooks'
 import { RepoFactoryStage } from './RepoFactoryStage'
 import { SmartSortStage } from './SmartSortStage'
 import { TriageStage } from './TriageStage'
+import { SeaStage } from './SeaStage'
 import styles from './Cards.module.css'
 
 export interface CardProps {
@@ -23,6 +24,8 @@ function Stage({ kind, active, reduced }: { kind: ProjectCard['kind']; active: b
       return <SmartSortStage active={active} reduced={reduced} />
     case 'triage':
       return <TriageStage active={active} reduced={reduced} />
+    case 'sea':
+      return <SeaStage active={active} reduced={reduced} />
     default:
       return null
   }
