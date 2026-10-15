@@ -222,7 +222,7 @@ export const projects: ProjectCard[] = [
 export const experience = {
   heading: ['Four years', 'at Guidewire'],
   company: 'Guidewire Software',
-  span: '4 yrs 1 mo · Canada → India',
+  span: '4 yrs 1 mo · Canada and India',
   roles: [
     {
       title: 'Platform Support Engineer II',
