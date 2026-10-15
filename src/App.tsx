@@ -7,7 +7,7 @@ import { Hero } from './sections/hero/Hero'
 import { About } from './sections/about/About'
 import { Work } from './sections/work/Work'
 import { useReducedMotion } from './lib/env'
-import { initSmoothScroll } from './lib/scroll'
+import { ScrollTrigger, initSmoothScroll } from './lib/scroll'
 
 export function App() {
   const reduced = useReducedMotion()
@@ -27,6 +27,14 @@ export function App() {
       offMagnetic()
     }
   }, [reduced])
+
+  // Late font loads change text widths: re-measure pinned sections.
+  useEffect(() => {
+    document.fonts?.ready.then(() => ScrollTrigger.refresh())
+    const onLoad = () => ScrollTrigger.refresh()
+    window.addEventListener('load', onLoad)
+    return () => window.removeEventListener('load', onLoad)
+  }, [])
 
   return (
     <>
