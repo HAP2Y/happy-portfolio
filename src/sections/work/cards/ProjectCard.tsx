@@ -2,6 +2,7 @@ import { useId, useRef, type ReactNode } from 'react'
 import type { ProjectCard } from '../../../content'
 import { useCardActive } from '../../../lib/hooks'
 import { RepoFactoryStage } from './RepoFactoryStage'
+import { SmartSortStage } from './SmartSortStage'
 import styles from './Cards.module.css'
 
 export interface CardProps {
@@ -17,6 +18,8 @@ function Stage({ kind, active, reduced }: { kind: ProjectCard['kind']; active: b
   switch (kind) {
     case 'repo-factory':
       return <RepoFactoryStage active={active} reduced={reduced} />
+    case 'smartsort':
+      return <SmartSortStage active={active} reduced={reduced} />
     default:
       return null
   }
