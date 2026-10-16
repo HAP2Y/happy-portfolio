@@ -54,5 +54,15 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     outDir: mode === 'artifact' ? 'dist-preview' : 'dist',
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // three.js + R3F load lazily, after first paint, in their own chunk
+        codeSplitting: {
+          // don't pull shared deps (React) into the lazy chunk
+          includeDependenciesRecursively: false,
+          groups: [{ name: 'three', test: /node_modules[\\/](three|@react-three)[\\/]/ }],
+        },
+      },
+    },
   },
 }))
