@@ -12,8 +12,8 @@
 export const site = {
   title: 'Happy Patel — Platform / DevOps / Frontend Engineer',
   description:
-    'Happy Patel builds the infrastructure and automation other engineers depend on. AWS, Terraform, Kubernetes, Python and Go. Ex-Guidewire. India → Toronto, open to remote.',
-  url: 'https://happypatel.dev', // ✎ your production URL (used for canonical + Open Graph)
+    'Happy Patel builds the infrastructure and automation other engineers depend on. AWS, Terraform, Kubernetes, Python and Go. Ex-Guidewire. Across Canada and India locations, open to work.',
+  url: 'https://hap2y.vercel.app/', // ✎ your production URL (used for canonical + Open Graph)
   year: 2026,
 }
 
@@ -71,14 +71,14 @@ export const about = {
     ['tenure', '4y 1m @ Guidewire'],
     ['education', 'BSc Computer Science, York University'],
     ['certified', 'Terraform Associate (004)'],
-    ['location', 'India → Toronto'],
+    ['location',  'Toronto and Bangalore'],
   ] as [string, string][],
   tools: [
     { group: 'Cloud & IaC', items: ['AWS · IAM · EC2 · RDS', 'Terraform', 'Kubernetes', 'Docker', 'GitHub Actions'] },
     { group: 'Languages', items: ['Python', 'Go', 'Node.js', 'TypeScript', 'GLSL'] },
     { group: 'Data & Identity', items: ['PostgreSQL', 'MySQL', 'Redis Streams', 'Okta', 'Ollama'] },
   ],
-  toolsNote: 'Kubernetes: in progress.',
+  toolsNote: 'Kubernetes (CKA): in progress.',
 }
 
 /* ───────────────────────── Projects & certs ───────────────────── */
@@ -152,7 +152,7 @@ export const triage = {
 export const cert = {
   name: 'HashiCorp Certified: Terraform Associate (004)',
   issuer: 'HashiCorp',
-  credentialId: 'ADD-CREDENTIAL-ID', // ✎ paste your credential ID
+  credentialId: '47b7ba9d-6de8-4574-bc48-f7e5e56dbc80', // ✎ paste your credential ID
   verifyUrl: 'https://www.credly.com/badges/47b7ba9d-6de8-4574-bc48-f7e5e56dbc80/', // ✎ paste your Credly verification link
   tag: 'Repo Factory was built while preparing for this exam.',
 }
@@ -273,11 +273,11 @@ export const experience = {
 
 export const contact = {
   heading: ['Let’s build', 'something'],
-  intro: 'Open to Platform, DevOps, SRE and Infrastructure roles: remote worldwide, or on-site in Toronto / GTA once my PR is final.',
+  intro: 'Open to Platform, DevOps, SRE, Infrastructure and Frontend Engineering roles: remote worldwide, or on-site in Canada.',
   copied: 'Email copied to clipboard',
   outputs: [
     ['status', '"open to work"'],
-    ['location', '"India → Toronto"'],
-    ['roles', '["platform", "devops", "sre", "infra"]'],
+    ['location', '"Toronto"'],
+    ['roles', '["platform", "devops", "sre", "infra", "frontend"]'],
   ] as [string, string][],
 }

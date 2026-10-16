@@ -108,7 +108,7 @@ export function Hero() {
         <p className={styles.tagline}>{person.tagline}</p>
         <p className={`${styles.region} label`}>
           <span>{person.regionLine}</span>
-          <span>Open to remote</span>
+          <span>Open to work</span>
         </p>
         <a
           href="#about"
