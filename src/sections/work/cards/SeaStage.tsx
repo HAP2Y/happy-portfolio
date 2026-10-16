@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { hasWebGL } from '../../../lib/env'
+import { use3D } from '../../../lib/env'
 import { useInView } from '../../../lib/hooks'
 import { useTheme } from '../../../lib/theme'
 import type { SeaPreview } from '../../../three/seaPreview'
@@ -16,7 +16,7 @@ export function SeaStage({ active, reduced }: { active: boolean; reduced: boolea
   const near = useInView(wrapRef, { rootMargin: '300px' })
   const theme = useTheme()
   const [sea, setSea] = useState<SeaPreview | null>(null)
-  const [webgl] = useState(() => hasWebGL())
+  const [webgl] = useState(() => use3D())
 
   useEffect(() => {
     if (!near || !webgl || !canvasRef.current) return

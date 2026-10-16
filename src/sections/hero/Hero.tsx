@@ -1,6 +1,6 @@
 import { Component, Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { hero, person } from '../../content'
-import { hasWebGL, isLowPower, useReducedMotion } from '../../lib/env'
+import { isLowPower, use3D, useReducedMotion } from '../../lib/env'
 import { scrollToEl } from '../../lib/scroll'
 import { Terminal } from './Terminal'
 import styles from './Hero.module.css'
@@ -24,7 +24,7 @@ class SceneBoundary extends Component<{ onError: () => void; children: ReactNode
 
 export function Hero() {
   const reduced = useReducedMotion()
-  const [webgl, setWebgl] = useState(() => hasWebGL())
+  const [webgl, setWebgl] = useState(() => use3D())
   const [lowPower] = useState(() => isLowPower())
   const [load3D, setLoad3D] = useState(false)
   const [sceneReady, setSceneReady] = useState(false)
