@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerformanceMonitor } from '@react-three/drei'
 import * as THREE from 'three'
@@ -38,6 +38,30 @@ function CameraRig({ reduced }: { reduced: boolean }) {
   return null
 }
 
+/**
+ * Compiles every shader in the scene without blocking the main thread
+ * (KHR_parallel_shader_compile via three's compileAsync) before the first
+ * frame. Without it, the first render can stall for hundreds of ms on
+ * slower GPUs while programs link.
+ */
+function Warmup({ ready, onWarm }: { ready: boolean; onWarm: () => void }) {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    if (!ready) return
+    let cancelled = false
+    const done = () => {
+      if (!cancelled) onWarm()
+    }
+    const renderer = gl as THREE.WebGLRenderer
+    const job = typeof renderer.compileAsync === 'function' ? renderer.compileAsync(scene, camera) : Promise.resolve()
+    job.then(done, done)
+    return () => {
+      cancelled = true
+    }
+  }, [ready, gl, scene, camera, onWarm])
+  return null
+}
+
 /** Re-renders once on theme change when the frameloop is on demand. */
 function ThemeInvalidator() {
   const theme = useTheme()
@@ -52,6 +76,13 @@ export default function HeroCanvas({ apply, reduced, lowPower, visible, onReady,
   const maxDpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2)
   const [dpr, setDpr] = useState(maxDpr)
   const wrapRef = useRef<HTMLDivElement>(null)
+  const [cubesReady, setCubesReady] = useState(false)
+  const [warm, setWarm] = useState(false)
+  const onCubesReady = useCallback(() => setCubesReady(true), [])
+  const onWarm = useCallback(() => {
+    setWarm(true)
+    onReady()
+  }, [onReady])
 
   useEffect(() => {
     if (reduced || !wrapRef.current) return
@@ -63,7 +94,7 @@ export default function HeroCanvas({ apply, reduced, lowPower, visible, onReady,
       <Canvas
         flat
         dpr={dpr}
-        frameloop={reduced ? 'demand' : visible ? 'always' : 'never'}
+        frameloop={!warm ? 'never' : reduced ? 'demand' : visible ? 'always' : 'never'}
         camera={{ position: [0, 0, BASE_CAMERA_Z], fov: CAMERA_FOV, near: 0.1, far: 260 }}
         gl={{ antialias: !lowPower, alpha: true, powerPreference: 'high-performance', stencil: false }}
         onCreated={({ gl, camera }) => {
@@ -81,7 +112,8 @@ export default function HeroCanvas({ apply, reduced, lowPower, visible, onReady,
         <ThemeInvalidator />
         <World lowPower={lowPower} reduced={reduced} />
         {!lowPower && <Sea reduced={reduced} />}
-        <NameCubes apply={apply} reduced={reduced} lowPower={lowPower} onReady={onReady} onAssembled={onAssembled} />
+        <NameCubes apply={apply} reduced={reduced} lowPower={lowPower} onReady={onCubesReady} onAssembled={onAssembled} />
+        <Warmup ready={cubesReady} onWarm={onWarm} />
       </Canvas>
     </div>
   )
